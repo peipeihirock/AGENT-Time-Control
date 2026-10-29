@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT // TIME CONTROL</title>
+<meta name="theme-color" content="#070b12">
+<meta name="description" content="AGENT Time Control — clock, stopwatch, timer and calendar">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<style>
+:root{--bg:#070b12;--panel:#0d1521;--line:#1b4051;--cyan:#55f5ff;--blue:#278bff;--green:#7dffb2;--red:#ff5368;--text:#d7f7ff;--muted:#7295a8}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 50% -20%,#15374a 0%,#070b12 55%);color:var(--text);font-family:Consolas,"Courier New",monospace;min-height:100vh;padding:22px}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 3px,#66eaff 4px);mix-blend-mode:screen}
+.wrap{max-width:1150px;margin:auto;position:relative}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding:4px 0 18px;margin-bottom:20px}
+.brand{letter-spacing:4px;color:var(--cyan);font-weight:bold;font-size:clamp(18px,3vw,27px)}.status{font-size:11px;color:var(--green);letter-spacing:2px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);margin-right:8px}
+.hero{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}.panel{background:linear-gradient(135deg,rgba(15,30,45,.96),rgba(7,15,25,.96));border:1px solid var(--line);box-shadow:0 0 24px #00131d;border-radius:10px;padding:20px;position:relative;overflow:hidden}.panel:after{content:"";position:absolute;top:0;left:0;width:70px;height:2px;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+.label{color:var(--muted);font-size:11px;letter-spacing:2px;margin-bottom:14px}.clock{font-size:clamp(42px,8vw,88px);font-weight:bold;letter-spacing:2px;color:#e9fdff;text-shadow:0 0 18px #37d8ff70;white-space:nowrap}.date{color:var(--cyan);font-size:clamp(13px,2vw,17px);margin-top:10px}.zone{color:var(--muted);font-size:11px;margin-top:8px}.mini-title{font-size:12px;color:var(--cyan);letter-spacing:2px;margin:0 0 16px}.readout{font-size:clamp(26px,4vw,42px);color:var(--green);margin:14px 0;letter-spacing:1px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.wide{grid-column:1/-1}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{font:inherit;font-size:12px;letter-spacing:1px;color:var(--text);background:#10283a;border:1px solid #2a6579;border-radius:5px;padding:10px 14px;cursor:pointer;transition:.15s}button:hover{background:#17445a;border-color:var(--cyan);box-shadow:0 0 12px #42dfff25}button.primary{background:#073b48;border-color:var(--cyan);color:var(--cyan)}button.danger{border-color:#753544;color:#ff8190;background:#2a121c}button:disabled{opacity:.35;cursor:not-allowed}
+input,select{font:inherit;color:var(--cyan);background:#050b12;border:1px solid #285164;border-radius:4px;padding:10px;min-width:0}input:focus{outline:1px solid var(--cyan)}.timer-inputs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.timer-inputs input{width:100px}.hint{font-size:11px;color:var(--muted);line-height:1.6;margin-top:12px}
+.calendar-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}.month{font-size:18px;color:var(--cyan)}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.dow,.day{display:flex;align-items:center;justify-content:center;min-height:36px;font-size:12px}.dow{color:var(--muted)}.day{border:1px solid #172d3b;border-radius:4px;background:#09121d;cursor:pointer}.day:hover{border-color:var(--cyan)}.day.today{border-color:var(--green);color:var(--green);box-shadow:inset 0 0 12px #7dffb215}.day.selected{background:#16475a;border-color:var(--cyan);color:white}.day.empty{visibility:hidden}.selected-date{margin-top:14px;padding:10px;border-left:2px solid var(--cyan);background:#09131e;font-size:12px;color:var(--muted)}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;color:#486b7b;font-size:10px;letter-spacing:1px}
+.event-form{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}
+.event-form input,.event-form textarea{width:100%}
+.event-list{display:grid;gap:8px;margin-top:12px}
+.event-item{border:1px solid #234658;background:#07111b;padding:10px;border-radius:5px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.event-item strong{color:var(--cyan);font-size:12px}.event-item small{display:block;color:var(--muted);margin-top:4px;line-height:1.5}
+.event-dot{width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;margin-left:4px;vertical-align:middle}
+.modal{position:fixed;inset:0;background:#02060deF;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}.modal-card{width:min(520px,100%);border:1px solid var(--red);background:#160b13;box-shadow:0 0 40px #ff536855;border-radius:10px;padding:26px;text-align:center}
+.modal-card h2{color:#ff7183;letter-spacing:3px}.modal-card p{color:#ffdce1;line-height:1.6}.alarm-flash{animation:flash .8s infinite alternate}
+@keyframes flash{from{box-shadow:0 0 10px #ff536833}to{box-shadow:0 0 38px #ff5368aa}}
+@media(max-width:760px){.event-item{align-items:flex-start}.event-form{grid-template-columns:1fr}}
+@media(max-width:760px){body{padding:12px}.hero,.grid{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:16px}.clock{font-size:clamp(38px,11vw,68px)}.top{align-items:flex-start;flex-direction:column}.day{min-height:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><div class="brand">AGENT<span style="color:#7295a8"> //</span> TIME CONTROL</div><div class="status"><span class="dot"></span>SYSTEM ONLINE</div></header>
+  <section class="hero">
+    <div class="panel">
+      <div class="label">01 / JAPAN STANDARD TIME</div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="date" id="dateLine">LOADING DATE...</div>
+      <div class="zone">TIME ZONE: ASIA / TOKYO (UTC+09:00)</div>
+    </div>
+    <div class="panel">
+      <div class="label">02 / SYSTEM STATUS</div>
+      <div class="mini-title">LOCAL TIME LINK</div>
+      <div style="font-size:15px;color:var(--green)">● CONNECTED</div>
+      <div class="hint">The clock uses your device time with the Japan time zone. It updates every second.</div>
+      <div style="height:1px;background:var(--line);margin:16px 0"></div>
+      <div class="mini-title">MISSION DATE</div>
+      <div id="missionDate" style="font-size:20px">----</div>
+    </div>
+  </section>
+  <section class="grid">
+    <div class="panel">
+      <div class="label">03 / STOPWATCH</div>
+      <h2 class="mini-title">ELAPSED TIME</h2>
+      <div class="readout" id="stopwatch">00:00:00.00</div>
+      <div class="controls">
+        <button class="primary" id="swStart">START</button><button id="swLap">LAP</button><button id="swReset" class="danger">RESET</button>
+      </div>
+      <div id="laps" class="hint">NO LAP RECORDS</div>
+    </div>
+    <div class="panel">
+      <div class="label">04 / COUNTDOWN TIMER</div>
+      <h2 class="mini-title">SET TIME / SECONDS</h2>
+      <div class="timer-inputs">
+        <input id="hours" type="number" min="0" max="999" value="0" aria-label="Hours"><span>H</span>
+        <input id="minutes" type="number" min="0" max="59" value="0" aria-label="Minutes"><span>M</span>
+        <input id="seconds" type="number" min="0" max="59" value="10" aria-label="Seconds"><span>S</span>
+      </div>
+      <div class="readout" id="timerDisplay">00:00:10</div>
+      <div class="controls">
+        <button class="primary" id="timerStart">START</button><button id="timerPause">PAUSE</button><button class="danger" id="timerReset">RESET</button>
+      </div>
+      <div id="timerMessage" class="hint">READY FOR YOUR MISSION.</div>
+    </div>
+    <div class="panel wide">
+      <div class="label">05 / CALENDAR</div>
+      <div class="calendar-head">
+        <button id="prevMonth" aria-label="Previous month">◀ BACK</button>
+        <div class="month" id="monthLabel">MONTH YEAR</div>
+        <button id="todayBtn" class="primary">TODAY</button>
+        <button id="nextMonth" aria-label="Next month">NEXT ▶</button>
+      </div>
+      <div class="cal" id="calendar"></div>
+      <div class="selected-date" id="selectedDate">SELECT A DATE.</div>
+      <div class="event-form">
+        <div class="mini-title">ADD A PLAN FOR THIS DAY</div>
+        <input id="eventTitle" type="text" maxlength="100" placeholder="Plan name (e.g. Study English)">
+        <div class="timer-inputs">
+          <input id="eventTime" type="time" value="09:00" aria-label="Plan time">
+          <input id="eventNote" type="text" maxlength="250" placeholder="Note (optional)" style="flex:1;width:160px">
+        </div>
+        <div class="controls"><button class="primary" id="addEventBtn">ADD PLAN</button></div>
+        <div class="hint">Plans are saved in this browser on this device. Keep this page open to get time alerts.</div>
+        <div id="eventList" class="event-list"></div>
+      </div>
+    </div>
+  </section>
+  <div class="modal" id="alarmModal" role="alertdialog" aria-modal="true" aria-labelledby="alarmTitle">
+  <div class="modal-card alarm-flash">
+    <h2 id="alarmTitle">TIME ALERT</h2>
+    <p id="alarmText">YOUR PLAN IS READY.</p>
+    <button class="danger" id="stopAlarmBtn">STOP ALARM</button>
+  </div>
+</div>
+<footer class="footer"><span>AGENT TOOLS // VERSION 1.0</span><span>STAY SHARP. STAY READY.</span></footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const jpFormatter = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'});
+function jpDateParts(date=new Date()){
+  const p=jpFormatter.formatToParts(date); const get=t=>p.find(x=>x.type===t).value;
+  return {year:+get('year'),month:+get('month'),day:+get('day')};
+}
+function updateClock(){
+  const now=new Date();
+  $('clock').textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(now);
+  $('dateLine').textContent=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Tokyo',weekday:'long',year:'numeric',month:'long',day:'2-digit'}).format(now).toUpperCase();
+  const p=jpDateParts(now); $('missionDate').textContent=`${p.year}.${String(p.month).padStart(2,'0')}.${String(p.day).padStart(2,'0')}`;
+}
+updateClock(); setInterval(updateClock,1000);
+
+// Stopwatch
+let swRunning=false, swStarted=0, swElapsed=0, swTick=null, lapCount=0;
+function fmtMs(ms){const cs=Math.floor(ms/10)%100;const s=Math.floor(ms/1000)%60;const m=Math.floor(ms/60000)%60;const h=Math.floor(ms/3600000);return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`}
+function paintSW(){ $('stopwatch').textContent=fmtMs(swElapsed+(swRunning?performance.now()-swStarted:0));}
+$('swStart').onclick=()=>{if(!swRunning){swRunning=true;swStarted=performance.now();$('swStart').textContent='STOP';swTick=setInterval(paintSW,30)}else{swElapsed+=performance.now()-swStarted;swRunning=false;clearInterval(swTick);$('swStart').textContent='START';paintSW()}};
+$('swLap').onclick=()=>{if(!swRunning && swElapsed===0)return;lapCount++;if(lapCount===1)$('laps').textContent='';const line=document.createElement('div');line.textContent=`LAP ${String(lapCount).padStart(2,'0')}  /  ${fmtMs(swElapsed+(swRunning?performance.now()-swStarted:0))}`;$('laps').prepend(line);};
+$('swReset').onclick=()=>{swRunning=false;clearInterval(swTick);swElapsed=0;lapCount=0;$('swStart').textContent='START';$('stopwatch').textContent='00:00:00.00';$('laps').textContent='NO LAP RECORDS'};
+
+// Countdown timer
+let timerRemaining=10,timerEnd=0,timerInterval=null,timerRunning=false;
+function readTimerInputs(){const h=Math.max(0,Math.floor(+$('hours').value||0));const m=Math.min(59,Math.max(0,Math.floor(+$('minutes').value||0)));const s=Math.min(59,Math.max(0,Math.floor(+$('seconds').value||0)));return h*3600+m*60+s}
+function fmtSec(sec){sec=Math.max(0,Math.ceil(sec));return `${String(Math.floor(sec/3600)).padStart(2,'0')}:${String(Math.floor(sec/60)%60).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
+function paintTimer(){ $('timerDisplay').textContent=fmtSec(timerRemaining);}
+function stopTimer(){clearInterval(timerInterval);timerInterval=null;timerRunning=false;}
+function timerTick(){timerRemaining=Math.max(0,(timerEnd-Date.now())/1000);paintTimer();if(timerRemaining<=0){stopTimer();$('timerMessage').textContent='TIME IS UP. MISSION COMPLETE.';startAlarm('TIME IS UP','THE COUNTDOWN IS OVER. PRESS STOP ALARM TO SILENCE.');}}
+let alarmAudio=null, alarmOsc=null, alarmGain=null, alarmPulse=null;
+function startAlarm(title, detail){
+  $('alarmTitle').textContent=title;
+  $('alarmText').textContent=detail;
+  $('alarmModal').classList.add('show');
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(C){
+      if(alarmAudio) { try{alarmAudio.close()}catch(e){} }
+      alarmAudio=new C(); alarmOsc=alarmAudio.createOscillator(); alarmGain=alarmAudio.createGain();
+      alarmOsc.type='sawtooth'; alarmOsc.frequency.value=880; alarmGain.gain.value=0;
+      alarmOsc.connect(alarmGain); alarmGain.connect(alarmAudio.destination); alarmOsc.start();
+      let high=false;
+      alarmPulse=setInterval(()=>{if(!alarmAudio||!alarmGain)return;high=!high;const t=alarmAudio.currentTime;alarmGain.gain.cancelScheduledValues(t);alarmGain.gain.setTargetAtTime(high?0.16:0.015,t,0.03);alarmOsc.frequency.setTargetAtTime(high?880:660,t,0.03)},350);
+      alarmAudio.resume().catch(()=>{});
+    }
+  }catch(e){}
+}
+function stopAlarm(){
+  $('alarmModal').classList.remove('show');
+  if(alarmPulse){clearInterval(alarmPulse);alarmPulse=null}
+  try{if(alarmOsc){alarmOsc.stop();alarmOsc.disconnect()}}catch(e){}
+  try{if(alarmAudio){alarmAudio.close()}}catch(e){}
+  alarmAudio=null;alarmOsc=null;alarmGain=null;
+}
+$('stopAlarmBtn').onclick=stopAlarm;
+$('timerStart').onclick=()=>{if(timerRunning)return;if(timerRemaining<=0)timerRemaining=readTimerInputs();if(timerRemaining<=0){$('timerMessage').textContent='SET A TIME FIRST.';return}timerEnd=Date.now()+timerRemaining*1000;timerRunning=true;$('timerMessage').textContent='TIMER RUNNING. STAY FOCUSED.';timerInterval=setInterval(timerTick,100);timerTick()};
+$('timerPause').onclick=()=>{if(timerRunning){timerRemaining=Math.max(0,(timerEnd-Date.now())/1000);stopTimer();$('timerMessage').textContent='TIMER PAUSED.';paintTimer()}};
+$('timerReset').onclick=()=>{stopTimer();timerRemaining=readTimerInputs();paintTimer();$('timerMessage').textContent='READY FOR YOUR MISSION.'};
+['hours','minutes','seconds'].forEach(id=>$(id).addEventListener('change',()=>{if(!timerRunning){timerRemaining=readTimerInputs();paintTimer();$('timerMessage').textContent='TIME SET.'}}));
+
+// Calendar
+let viewYear,viewMonth,selected;
+const EVENT_KEY='agent_time_control_events_v1';
+let events=[];
+try{events=JSON.parse(localStorage.getItem(EVENT_KEY)||'[]');if(!Array.isArray(events))events=[]}catch(e){events=[]}
+const alertedEvents=new Set();
+function saveEvents(){try{localStorage.setItem(EVENT_KEY,JSON.stringify(events))}catch(e){$('timerMessage').textContent='BROWSER STORAGE IS NOT AVAILABLE.'}}
+function dateKey(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function selectedKey(){return dateKey(selected.year,selected.month,selected.day)}
+function initCalendar(){const p=jpDateParts();viewYear=p.year;viewMonth=p.month-1;selected={year:p.year,month:p.month-1,day:p.day};renderCalendar()}
+function renderEventList(){
+  const list=$('eventList');list.innerHTML='';
+  const key=selectedKey(), dayEvents=events.filter(e=>e.date===key).sort((a,b)=>a.time.localeCompare(b.time));
+  if(!dayEvents.length){list.textContent='NO PLANS FOR THIS DAY.';list.className='event-list hint';return}
+  list.className='event-list';
+  dayEvents.forEach(ev=>{
+    const item=document.createElement('div');item.className='event-item';
+    const info=document.createElement('div');const title=document.createElement('strong');title.textContent=`${ev.time}  //  ${ev.title}`;info.appendChild(title);
+    if(ev.note){const note=document.createElement('small');note.textContent=ev.note;info.appendChild(note)}
+    const del=document.createElement('button');del.className='danger';del.textContent='DELETE';del.onclick=()=>{events=events.filter(x=>x.id!==ev.id);saveEvents();renderCalendar()};
+    item.append(info,del);list.appendChild(item);
+  });
+}
+function renderCalendar(){
+  $('monthLabel').textContent=new Date(viewYear,viewMonth,1).toLocaleDateString('en-US',{month:'long',year:'numeric'}).toUpperCase();
+  const cal=$('calendar');cal.innerHTML='';
+  ['SUN','MON','TUE','WED','THU','FRI','SAT'].forEach(d=>{const el=document.createElement('div');el.className='dow';el.textContent=d;cal.appendChild(el)});
+  const first=new Date(viewYear,viewMonth,1).getDay(),days=new Date(viewYear,viewMonth+1,0).getDate(),today=jpDateParts();
+  for(let i=0;i<first;i++){const e=document.createElement('div');e.className='day empty';cal.appendChild(e)}
+  for(let d=1;d<=days;d++){const e=document.createElement('button');e.className='day';e.textContent=d;
+    const key=dateKey(viewYear,viewMonth,d);
+    if(events.some(ev=>ev.date===key)){const dot=document.createElement('span');dot.className='event-dot';dot.setAttribute('aria-label','has plan');e.appendChild(dot)}
+    if(viewYear===today.year&&viewMonth===today.month-1&&d===today.day)e.classList.add('today');
+    if(selected&&viewYear===selected.year&&viewMonth===selected.month&&d===selected.day)e.classList.add('selected');
+    e.onclick=()=>{selected={year:viewYear,month:viewMonth,day:d};renderCalendar()};cal.appendChild(e)}
+  if(selected){const dt=new Date(selected.year,selected.month,selected.day);$('selectedDate').textContent='SELECTED DATE: '+new Intl.DateTimeFormat('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(dt).toUpperCase()}
+  renderEventList();
+}
+$('prevMonth').onclick=()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--}renderCalendar()};
+$('nextMonth').onclick=()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++}renderCalendar()};
+$('todayBtn').onclick=()=>{const p=jpDateParts();viewYear=p.year;viewMonth=p.month-1;selected={year:p.year,month:p.month-1,day:p.day};renderCalendar()};
+$('addEventBtn').onclick=()=>{
+  const title=$('eventTitle').value.trim(), time=$('eventTime').value||'09:00', note=$('eventNote').value.trim();
+  if(!title){$('eventTitle').focus();$('eventTitle').placeholder='PLEASE ENTER A PLAN NAME';return}
+  const ev={id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,date:selectedKey(),time,title,note,notified:false};
+  events.push(ev);saveEvents();$('eventTitle').value='';$('eventNote').value='';renderCalendar();
+  const now=new Date(),p=jpDateParts(now),todayKey=dateKey(p.year,p.month-1,p.day);
+  if(ev.date===todayKey){
+    const [hh,mm]=ev.time.split(':').map(Number);
+    const nowParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(now).split(':').map(Number);
+    if(hh*60+mm<=nowParts[0]*60+nowParts[1]){ev.notified=true;saveEvents();startAlarm('NEW PLAN ADDED',`${ev.title} IS SET FOR TODAY. PLEASE CHECK YOUR PLAN.`)}
+  }
+};
+function checkDueEvents(){
+  const now=new Date(),p=jpDateParts(now),key=dateKey(p.year,p.month-1,p.day);
+  const hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(now).split(':').map(Number);
+  const minute=hm[0]*60+hm[1];
+  for(const ev of events){
+    const due=ev.date===key&&(()=>{const [h,m]=ev.time.split(':').map(Number);return h*60+m})()===minute;
+    if(due&&!ev.notified&&!alertedEvents.has(ev.id)){
+      ev.notified=true;alertedEvents.add(ev.id);saveEvents();startAlarm('PLAN TIME',`${ev.time}  //  ${ev.title}${ev.note?' — '+ev.note:''}`);
+    }
+  }
+}
+setInterval(checkDueEvents,1000);
+initCalendar();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(err => {
+      console.warn("Service worker registration failed:", err);
+    });
+  });
+}
+</script>
+\n</body>
+</html>
